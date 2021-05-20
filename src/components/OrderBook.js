@@ -1,63 +1,103 @@
-import React, { useEffect, useState } from 'react';
-import { string } from 'prop-types';
+import React, { useEffect, useState } from "react";
+import { bool, func } from "prop-types";
+import { merge } from "lodash";
 
-import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
+import { Table } from "semantic-ui-react";
 
-import axios from '../axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "../axios";
 
 const propTypes = {
-  title: string.isRequired,
-  subtitle1: string.isRequired,
-  subtitle2: string.isRequired,
+  refetch: bool.isRequired,
+  onRefetch: func.isRequired,
 };
 
-const OrderBook = ({ title, subtitle1, subtitle2 }) => {
-  const [availableData, setStateAvailableData] = useState({});
+const OrderBook = ({ refetch, onRefetch }) => {
+  const [data, setData] = useState([]);
 
   const getBooks = async () => {
     try {
-      const { data } = await axios.get('/book');
-      console.log(data);
-      setStateAvailableData(data);
+      const { data } = await axios.get("/book");
+      const { buys, sells } = data;
+
+      let formattedBuys = [];
+      Object.keys(buys).map((key) =>
+        formattedBuys.push({ priceBuy: key, quantityBuy: buys[key] })
+      );
+      formattedBuys.sort((a, b) => b.priceBuy - a.priceBuy);
+      formattedBuys = formattedBuys.filter((i) => i.quantityBuy !== 0);
+
+      let formattedSells = [];
+      Object.keys(sells).map((key) =>
+        formattedSells.push({ priceSell: key, quantitySell: sells[key] })
+      );
+      formattedSells.sort((a, b) => a.priceSell - b.priceSell);
+      formattedSells = formattedSells.filter((i) => i.quantitySell !== 0);
+      const mergedValues = merge(formattedBuys, formattedSells);
+
+      setData(mergedValues);
     } catch {
-      toast.error('An error occured while fetching books data');
+      toast.error("An error occured while fetching books data", {
+        position: "bottom-left",
+      });
     }
+    onRefetch();
   };
 
   useEffect(() => {
     getBooks();
   }, []);
 
-  // const rednerBuys = () => {};
+  useEffect(() => {
+    if (refetch) {
+      getBooks();
+    }
+  }, [refetch]);
+
   return (
-    <Grid container spacing={1}>
-      <Grid item xs={12}>
-        <Paper square>
-          <Typography>{(title = "Buys")}</Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Paper square>
-          <Typography>{(subtitle1 = "Quantity")}</Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Paper square>
-          <Typography>{(subtitle2 = "Price")}</Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-          <Paper>
-            <Typography></Typography>
-          </Paper>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-          <Paper>xs=6 sm=3</Paper>
-      </Grid>
-    </Grid>
+    <>
+      <Table celled>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell colSpan="2" textAlign="center">
+              Buys
+            </Table.HeaderCell>
+            <Table.HeaderCell colSpan="2" textAlign="center">
+              Sells
+            </Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell textAlign="left">Quantity</Table.Cell>
+            <Table.Cell textAlign="left">Price</Table.Cell>
+            <Table.Cell textAlign="left">Price</Table.Cell>
+            <Table.Cell textAlign="left">Quantity</Table.Cell>
+          </Table.Row>
+          {data &&
+            data.map((item) => {
+              return (
+                <Table.Row key={item.priceBuy || item.priceSell}>
+                  <Table.Cell textAlign="right">
+                    {item.quantityBuy}
+                  </Table.Cell>
+                  <Table.Cell textAlign="right">
+                    {item.priceBuy}
+                  </Table.Cell>
+                  <Table.Cell textAlign="right">
+                    {item.priceSell}
+                  </Table.Cell>
+                  <Table.Cell textAlign="right">
+                    {item.quantitySell}
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+        </Table.Body>
+      </Table>
+      <ToastContainer />
+    </>
   );
 };
 

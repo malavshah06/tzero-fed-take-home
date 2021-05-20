@@ -1,23 +1,28 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import { func } from "prop-types";
 
-// import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
-import Grid from '@material-ui/core/Grid';
-// import Paper from '@material-ui/core/Paper';
-import TextField from '@material-ui/core/TextField';
+import { Grid, Input, Button } from "semantic-ui-react";
 
-import axios from '../axios';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "../axios";
 
-const OrderEntry = () => {
+const propTypes = {
+  onSubmit: func.isRequired,
+};
+
+const OrderEntry = ({ onSubmit }) => {
   const [formData, SetStateFormData] = useState({});
   const [btnDisable, setStateBtnDisable] = useState(false);
 
   const submitBuy = async () => {
     try {
-      await axios.post('/buy', formData);
-    } catch(err) {
-      toast.error('An error occured while buying product');
+      await axios.post("/buy", formData);
+      onSubmit();
+    } catch (err) {
+      toast.error("An error occured while buying product", {
+        position: "bottom-left",
+      });
     } finally {
       setStateBtnDisable(false);
     }
@@ -25,9 +30,12 @@ const OrderEntry = () => {
 
   const submitSell = async () => {
     try {
-      await axios.post('/sell', formData);
-    } catch(err) {
-      toast.error('An error occured while selling product');
+      await axios.post("/sell", formData);
+      onSubmit();
+    } catch (err) {
+      toast.error("An error occured while selling product", {
+        position: "bottom-left",
+      });
     } finally {
       setStateBtnDisable(false);
     }
@@ -44,22 +52,56 @@ const OrderEntry = () => {
   };
 
   const handleInputChange = (event, inputName) => {
-    SetStateFormData({...formData, [inputName]:event.target.value});
+    SetStateFormData({ ...formData, [inputName]: event.target.value });
   };
 
-  console.log(formData);
   return (
-    <Grid container sm={12} justify="center" style={{height:'100px', marginTop:'20px', marginBottom:'50px'}}>
-      <Grid item sm={12} justify="space-evenly" alignItems="flex-start">
-        <TextField id="price" label="Price" variant="outlined" onChange={e => handleInputChange(e,'price')}/>
-        <TextField id="quantity" label="Quantity" variant="outlined" onChange={e => handleInputChange(e, 'quantity')}/>
+    <>
+      <Grid textAlign="center" padded="vertically">
+        <Grid.Row columns={4}>
+          <Grid.Column>
+            <Input
+              name="price"
+              label="Price"
+              placeholder="Price"
+              onChange={(e) => handleInputChange(e, "price")}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Input
+              name="quantity"
+              label="Quantity"
+              placeholder="Quantity"
+              onChange={(e) => handleInputChange(e, "quantity")}
+            />
+          </Grid.Column>
+        </Grid.Row>
+        <Grid.Row columns={6} textAlign="center">
+          <Grid.Column>
+            <Button
+              primary="true"
+              onClick={handleSubmitBuy}
+              disabled={btnDisable}
+            >
+              Buy
+            </Button>
+          </Grid.Column>
+          <Grid.Column>
+            <Button
+              secondary="true"
+              onClick={handleSubmitSell}
+              disabled={btnDisable}
+            >
+              Sell
+            </Button>
+          </Grid.Column>
+        </Grid.Row>
       </Grid>
-      <Grid item xs={12} justify="center" alignItems="flex-start" style={{marginTop:'20px'}}>
-        <Button variant="contained" onClick={handleSubmitBuy} disabled={btnDisable}>Buy</Button>
-        <Button variant="contained" onClick={handleSubmitSell} disabled={btnDisable}>Sell</Button>
-      </Grid>
-    </Grid>
+      <ToastContainer />
+    </>
   );
 };
+
+OrderEntry.propTypes = propTypes;
 
 export default OrderEntry;
